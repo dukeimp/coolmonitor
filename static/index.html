@@ -1,0 +1,357 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>CoolMonitor</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="stylesheet" href="/css/app.css?v=4.3">
+</head>
+<body>
+<!-- 登录页 -->
+<div id="loginPage" class="page active">
+<div class="login-container">
+<div class="login-card">
+<div class="login-header"><i class="fas fa-lock"></i><h1>CoolMonitor</h1><p>网站监控系统登录</p></div>
+<form id="loginForm">
+<div class="input-group"><i class="fas fa-user"></i><input type="text" id="username" placeholder="用户名" required></div>
+<div class="input-group"><i class="fas fa-key"></i><input type="password" id="password" placeholder="密码" required></div>
+<button type="submit" class="btn btn-primary" style="width:100%"><i class="fas fa-sign-in-alt"></i> 登录</button>
+</form>
+<div id="loginError" class="error-message"></div>
+<div id="registerEntry" style="display:none;text-align:center;margin-top:16px"><a href="#" onclick="showRegister();return false" style="color:var(--muted);font-size:13px;text-decoration:none">尚未初始化？注册管理员</a></div>
+</div>
+</div>
+</div>
+<!-- 注册页 -->
+<div id="registerPage" class="page">
+<div class="login-container">
+<div class="login-card">
+<div class="login-header"><i class="fas fa-user-plus"></i><h1>注册管理员</h1><p>第一个注册的账号为超级管理员</p></div>
+<form id="registerForm">
+<div class="input-group"><i class="fas fa-user"></i><input type="text" id="regUser" placeholder="用户名" required></div>
+<div class="input-group"><i class="fas fa-key"></i><input type="password" id="regPass" placeholder="密码（至少6位）" required></div>
+<button type="submit" class="btn btn-primary" style="width:100%"><i class="fas fa-user-plus"></i> 注册</button>
+</form>
+<div id="regError" class="error-message"></div>
+<div style="text-align:center;margin-top:16px"><a href="#" onclick="showLoginPage()" style="color:var(--muted);font-size:13px;text-decoration:none">已有账号？去登录</a></div>
+</div>
+</div>
+</div>
+<!-- 主页面 -->
+<div id="mainPage" class="page">
+<div class="app-layout">
+<div class="sidebar" id="sidebar">
+<div class="sidebar-brand"><i class="fas fa-globe"></i><span>CoolMonitor</span><button id="sidebarToggle" class="sidebar-toggle" type="button" title="收起菜单" aria-label="收起菜单" aria-expanded="true"><i class="fas fa-angles-left"></i></button></div>
+<div class="sidebar-menu">
+<button class="nav-item active" data-tab="dashboard"><i class="fas fa-tachometer-alt"></i><span data-menu-label="dashboard">仪表盘</span></button>
+<button class="nav-item" data-tab="admin"><i class="fas fa-cog"></i><span data-menu-label="admin">监控管理</span></button>
+<button class="nav-item" data-tab="logs"><i class="fas fa-list-alt"></i><span data-menu-label="logs">监控日志</span></button>
+<button class="nav-item" data-tab="users" data-permission="users.view"><i class="fas fa-users"></i><span data-menu-label="users">用户管理</span></button>
+<div id="customMenuList" class="custom-menu-list"></div>
+<button class="nav-item settings-parent" data-tab="settings" data-permission="settings.view"><i class="fas fa-sliders"></i><span data-menu-label="settings">系统设置</span><i class="fas fa-chevron-down submenu-chevron"></i></button>
+<div class="sidebar-submenu" data-permission="settings.view">
+  <button class="submenu-item" data-settings-panel="notifications" data-permission="notifications.view" onclick="openSettingsPanel('notifications')"><i class="fas fa-bell"></i><span data-menu-label="notification_settings">通知设置</span></button>
+  <button class="submenu-item" data-settings-panel="menu" onclick="openSettingsPanel('menu')"><i class="fas fa-list-check"></i><span data-menu-label="menu_settings">菜单管理</span></button>
+  <button class="submenu-item" data-settings-panel="ua" onclick="openSettingsPanel('ua')"><i class="fas fa-globe"></i><span data-menu-label="ua_settings">User-Agent 设置</span></button>
+</div>
+        </div>
+</div>
+<div class="main-content">
+<div class="topbar">
+  <div class="topbar-title"><i class="fas fa-globe"></i> CoolMonitor</div>
+  <div class="topbar-user">
+    <div class="user-identity"><span class="topbar-username" id="topbarUsername">用户</span><span class="role-pill" id="topbarRole">访问者</span></div>
+    <div class="user-avatar-dropdown">
+      <div class="user-avatar" id="userAvatar">
+        <i class="fas fa-user-circle"></i>
+      </div>
+      <div class="user-dropdown" id="userDropdown">
+        <button class="dropdown-item" id="changePwdBtn"><i class="fas fa-key"></i> 修改密码</button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item dropdown-logout" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> 退出登录</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Dashboard Tab -->
+<div id="dashboardTab" class="tab-content active">
+<div class="container">
+<div class="dashboard-toolbar"><div><span class="eyebrow">OPERATIONS OVERVIEW</span><h2>运维总览</h2><p id="dashboardUpdated">正在加载实时数据...</p></div><div class="dashboard-actions"><div class="range-switch"><button class="active" data-range="24h" onclick="setDashboardRange('24h')">24小时</button><button data-range="7d" onclick="setDashboardRange('7d')">7天</button><button data-range="30d" onclick="setDashboardRange('30d')">30天</button></div><span class="refresh-countdown"><i class="fas fa-rotate"></i><b id="refreshCountdown">30</b>s</span></div></div>
+<div class="stats-row">
+<div class="stat-card"><i class="fas fa-link" style="color:var(--primary)"></i><span class="stat-number" id="total">0</span><span class="stat-label">监控总数</span></div>
+<div class="stat-card"><i class="fas fa-check-circle" style="color:var(--success)"></i><span class="stat-number" id="online">0</span><span class="stat-label">在线</span></div>
+<div class="stat-card"><i class="fas fa-exclamation-circle" style="color:var(--danger)"></i><span class="stat-number" id="offline">0</span><span class="stat-label">异常</span></div>
+<div class="stat-card"><i class="fas fa-chart-line" style="color:var(--info)"></i><span class="stat-number" id="uptime">0%</span><span class="stat-label">可用率</span></div>
+<div class="stat-card"><i class="fas fa-clock" style="color:var(--warning)"></i><span class="stat-number" id="avgResponse">0 ms</span><span class="stat-label">平均响应</span></div>
+<div class="stat-card"><i class="fas fa-gauge-high" style="color:var(--primary)"></i><span class="stat-number" id="p95Response">0 ms</span><span class="stat-label">P95 响应</span></div>
+<div class="stat-card"><i class="fas fa-wave-square" style="color:var(--info)"></i><span class="stat-number" id="rangeChecks">0</span><span class="stat-label">区间检测数</span></div>
+</div>
+
+<div class="dashboard-panel status-overview-panel"><div class="panel-heading"><div><span class="eyebrow">STATUS TIMELINE</span><h3><i class="fas fa-timeline"></i> 运行状态</h3></div><div class="status-legend"><span><i class="ok"></i>正常</span><span><i class="fail"></i>异常</span><span><i class="timeout"></i>超时</span></div></div><div id="dashboardStatusOverview" class="status-overview"></div></div>
+<div class="form-card">
+<h3><i class="fas fa-chart-line"></i> 响应时间趋势</h3>
+<canvas id="dashResponseChart" style="max-height:300px"></canvas>
+</div>
+</div>
+</div>
+<!-- Admin Tab -->
+<div id="adminTab" class="tab-content">
+<div class="container">
+<div class="section-header"><div><span class="eyebrow">MONITOR TARGETS</span><h2><i class="fas fa-list"></i> 监控列表</h2></div><button class="btn btn-primary" data-permission="sites.create" onclick="openAddModal()"><i class="fas fa-plus"></i> 新增监控</button></div>
+<div class="search-bar">
+  <div class="search-group"><input type="text" id="searchName" placeholder="名称"></div>
+  <div class="search-group"><input type="text" id="searchUrl" placeholder="地址"></div>
+  <div class="search-group">
+    <select id="searchType">
+      <option value="">全部类型</option>
+      <option value="http">HTTP</option>
+      <option value="keyword">关键词</option>
+      <option value="json">JSON API</option>
+      <option value="ssl">SSL 证书</option>
+      <option value="tcp">TCP 端口</option>
+    </select>
+  </div>
+  <div class="search-group">
+    <select id="searchStatus">
+      <option value="">全部状态</option>
+      <option value="1">在线</option>
+      <option value="0">离线</option>
+    </select>
+  </div>
+  <div class="search-group">
+    <select id="searchFreq">
+      <option value="">全部频率</option>
+      <option value="1">1 分钟</option>
+      <option value="30">30 分钟</option>
+      <option value="360">6 小时</option>
+      <option value="1440">1 天</option>
+    </select>
+  </div>
+  <button class="btn btn-secondary btn-sm" onclick="resetAdminFilter()"><i class="fas fa-undo"></i> 重置</button>
+  <button class="btn btn-primary btn-sm" onclick="filterAdmin()"><i class="fas fa-magnifying-glass"></i> 查询</button>
+</div>
+<table><thead><tr><th>名称</th><th>地址</th><th>类型</th><th>状态</th><th>响应</th><th>失败</th><th>频率</th><th>操作</th></tr></thead><tbody id="list"></tbody></table>
+<div class="admin-pagination" id="adminPagination">
+  <div><span id="adminPageInfo"></span></div>
+  <label class="pagination-size">每页 <select id="adminPageSize" onchange="changeAdminPageSize()"><option value="10" selected>10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select> 条</label>
+  <div class="pagination-btns">
+    <button class="btn btn-secondary btn-sm" id="adminFirstBtn" onclick="adminFirstPage()"><i class="fas fa-angles-left"></i> 首页</button>
+    <button class="btn btn-secondary btn-sm" id="adminPrevBtn" onclick="adminPrevPage()"><i class="fas fa-chevron-left"></i> 上一页</button>
+    <button class="btn btn-secondary btn-sm" id="adminNextBtn" onclick="adminNextPage()">下一页 <i class="fas fa-chevron-right"></i></button>
+    <button class="btn btn-secondary btn-sm" id="adminLastBtn" onclick="adminLastPage()">末页 <i class="fas fa-angles-right"></i></button>
+  </div>
+</div>
+</div>
+</div>
+<!-- Logs Tab -->
+<div id="logsTab" class="tab-content">
+<div class="container">
+<div class="section-header"><div><span class="eyebrow">ACTIVITY STREAM</span><h2><i class="fas fa-list-alt"></i> 监控日志</h2></div><div class="log-header-actions"><button class="btn btn-secondary" data-permission="settings.view" onclick="openRetentionSettings()"><i class="fas fa-clock-rotate-left"></i> 自动清理设置</button><button class="btn btn-danger" id="deleteLogsButton" data-permission="logs.delete" onclick="deleteLogsBySelection()" disabled><i class="fas fa-trash"></i> 删除</button><button class="btn btn-primary" onclick="filterLogs()"><i class="fas fa-magnifying-glass"></i> 查询</button></div></div>
+<div class="search-bar">
+  <div class="search-group">
+    <select id="logSiteId">
+      <option value="">全部站点</option>
+    </select>
+  </div>
+  <div class="search-group">
+    <select id="logStatus">
+      <option value="">全部状态</option>
+      <option value="1">在线</option>
+      <option value="0">离线</option>
+    </select>
+  </div>
+  <div class="search-group"><input type="text" id="logKeyword" placeholder="错误信息"></div>
+  <div class="search-group date-filter"><label>开始日期</label><input type="date" id="logDateFrom"></div>
+  <div class="search-group date-filter"><label>结束日期</label><input type="date" id="logDateTo"></div>
+  <button class="btn btn-secondary btn-sm" onclick="resetLogFilter()"><i class="fas fa-undo"></i> 重置</button>
+</div>
+<table><thead><tr><th data-permission="logs.delete"><input id="logSelectAll" type="checkbox" onchange="toggleAllLogs(this.checked)"></th><th>站点</th><th>状态</th><th>HTTP</th><th>响应</th><th>信息</th><th>时间</th><th>操作</th></tr></thead><tbody id="logList"></tbody></table>
+<div class="admin-pagination" id="logPagination">
+  <div><span id="logPageInfo"></span></div>
+  <label class="pagination-size">每页 <select id="logPageSize" onchange="changeLogPageSize()"><option value="10" selected>10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select> 条</label>
+  <div class="pagination-btns">
+    <button class="btn btn-secondary btn-sm" id="logFirstBtn" onclick="logFirstPage()"><i class="fas fa-angles-left"></i> 首页</button>
+    <button class="btn btn-secondary btn-sm" id="logPrevBtn" onclick="logPrevPage()"><i class="fas fa-chevron-left"></i> 上一页</button>
+    <button class="btn btn-secondary btn-sm" id="logNextBtn" onclick="logNextPage()">下一页 <i class="fas fa-chevron-right"></i></button>
+    <button class="btn btn-secondary btn-sm" id="logLastBtn" onclick="logLastPage()">末页 <i class="fas fa-angles-right"></i></button>
+  </div>
+</div>
+</div>
+</div>
+<!-- Users Tab -->
+<div id="usersTab" class="tab-content">
+<div class="container">
+<div class="section-header"><div><span class="eyebrow">ACCESS CONTROL</span><h2><i class="fas fa-users"></i> 用户与权限</h2><p class="section-subtitle">管理账号、角色与按钮级操作权限</p></div><button class="btn btn-primary" data-permission="users.create" onclick="openUserModal()"><i class="fas fa-user-plus"></i> 新增用户</button></div>
+<div class="role-overview">
+  <div class="role-card admin"><i class="fas fa-shield-halved"></i><div><strong>管理员</strong><span>拥有系统全部权限</span></div></div>
+  <div class="role-card user"><i class="fas fa-user-gear"></i><div><strong>普通用户</strong><span>可新增、编辑与检测监控</span></div></div>
+  <div class="role-card visitor"><i class="fas fa-eye"></i><div><strong>访问者</strong><span>仅可查看仪表盘与日志</span></div></div>
+</div>
+<div class="table-shell"><table><thead><tr><th>用户</th><th>角色</th><th>权限数</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead><tbody id="userList"></tbody></table></div>
+</div>
+</div>
+<!-- Settings Tab -->
+<div id="settingsTab" class="tab-content">
+<div class="container settings-container">
+<div class="section-header"><div><span class="eyebrow">SYSTEM POLICY</span><h2><i class="fas fa-sliders"></i> 系统设置</h2><p class="section-subtitle">配置日志数据包的保留与自动清理策略</p></div></div>
+<div id="notificationSettingsPanel" class="settings-panel">
+<div class="notification-master"><div><span class="notification-orb"><i class="fas fa-bell"></i></span><div><h3>故障通知中心</h3><p>连续失败达到监控阈值时发送告警，恢复后发送恢复通知。</p></div></div><label class="switch"><input id="notifyEnabled" type="checkbox"><span class="slider"></span></label></div>
+<div class="notify-events"><label><input id="notifyFailure" type="checkbox" checked> 故障时通知</label><label><input id="notifyRecovery" type="checkbox" checked> 恢复时通知</label></div>
+<div class="channel-grid">
+  <div class="channel-card"><div class="channel-head"><i class="fas fa-envelope"></i><strong>Cloudflare 原生邮件</strong><label class="switch"><input id="emailEnabled" type="checkbox"><span class="slider"></span></label></div><p>管理员配置发件人与 Cloudflare 已验证的目标邮箱</p><input id="emailFrom" type="email" placeholder="发件人，例如 monitor@your-domain.com"><input id="emailTo" type="email" placeholder="已验证收件人，例如 user@example.com"><small class="channel-help">发件域名必须已接入 Cloudflare Email Service；收件邮箱必须先在 Destination Addresses 中完成验证。</small></div>
+  <div class="channel-card"><div class="channel-head"><i class="fab fa-weixin"></i><strong>企业微信</strong><label class="switch"><input id="wecomEnabled" type="checkbox"><span class="slider"></span></label></div><p>企业微信群机器人 Webhook</p><input id="wecomWebhook" type="password" placeholder="https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=..."></div>
+  <div class="channel-card"><div class="channel-head"><i class="fab fa-telegram"></i><strong>Telegram</strong><label class="switch"><input id="telegramEnabled" type="checkbox"><span class="slider"></span></label></div><p>Telegram Bot 通知</p><input id="telegramToken" type="password" placeholder="完整 Bot Token，例如 123456789:AA..."><input id="telegramChatId" placeholder="Chat ID"><small class="channel-help">Bot Token 必须包含机器人数字 ID、冒号和密钥，可从 @BotFather 的完整回复中复制。</small></div>
+</div>
+<div class="template-editor">
+  <div class="template-heading"><div><h3><i class="fas fa-message"></i> 告警消息模板</h3><p>邮件和 Telegram 共用，默认采用简洁运维版（方案 A）。</p></div><button class="btn btn-secondary btn-sm" data-permission="notifications.edit" onclick="resetNotificationTemplate()"><i class="fas fa-rotate-left"></i> 恢复默认</button></div>
+  <div class="template-vars" id="templateVars"></div>
+  <div class="template-grid"><div><label>故障通知标题</label><input id="failureTemplateTitle" oninput="previewNotificationTemplate()"><label>故障通知正文</label><textarea id="failureTemplateBody" rows="9" oninput="previewNotificationTemplate()"></textarea></div><div><label>恢复通知标题</label><input id="recoveryTemplateTitle" oninput="previewNotificationTemplate()"><label>恢复通知正文</label><textarea id="recoveryTemplateBody" rows="9" oninput="previewNotificationTemplate()"></textarea></div></div>
+  <div class="template-preview"><div><span>故障预览</span><strong id="failurePreviewTitle"></strong><pre id="failurePreviewBody"></pre></div><div><span>恢复预览</span><strong id="recoveryPreviewTitle"></strong><pre id="recoveryPreviewBody"></pre></div></div>
+</div>
+<div class="notification-actions" data-permission="notifications.edit"><button class="btn btn-secondary" onclick="testNotificationChannels()"><i class="fas fa-paper-plane"></i> 发送测试</button><button class="btn btn-primary" onclick="saveNotificationSettings()"><i class="fas fa-floppy-disk"></i> 保存通知设置</button></div>
+</div>
+<div id="menuSettingsPanel" class="settings-panel">
+<div class="settings-card menu-name-card" data-permission="settings.edit">
+  <div class="settings-icon"><i class="fas fa-pen-ruler"></i></div>
+  <div class="settings-main"><h3>菜单显示名称</h3><p>管理员可修改主菜单和设置子菜单在侧边栏中显示的名称。</p><div id="menuNameGrid" class="menu-name-grid"></div><button class="btn btn-primary btn-sm" onclick="saveMenuLabels()"><i class="fas fa-floppy-disk"></i> 保存菜单名称</button></div>
+</div>
+<div class="settings-card custom-menu-card">
+  <div class="settings-icon"><i class="fas fa-link"></i></div>
+  <div class="settings-main"><div class="settings-title-row"><div><h3>自定义菜单</h3><p>添加菜单名称和对应 URL，支持系统内部 # 地址和外部网址。</p></div><button class="btn btn-primary btn-sm" data-permission="settings.edit" onclick="startAddCustomMenu()"><i class="fas fa-plus"></i> 新增菜单</button></div>
+    <div id="customMenuEditor" class="ua-editor" style="display:none"><input id="customMenuName" placeholder="菜单名称"><input id="customMenuUrl" placeholder="#logs 或 https://example.com"><div><button class="btn btn-secondary btn-sm" onclick="cancelCustomMenuEdit()">取消</button><button class="btn btn-primary btn-sm" onclick="saveCustomMenu()">保存</button></div></div>
+    <div id="customMenuTable" class="ua-dictionary"></div>
+  </div>
+</div>
+</div>
+<div id="retentionSettingsPanel" class="settings-panel">
+<div class="settings-card">
+  <div class="settings-icon"><i class="fas fa-database"></i></div>
+  <div class="settings-main"><h3>监控日志保留时间</h3><p>过期的日志、请求数据包和响应数据包将被一起自动删除。</p>
+    <div class="retention-controls"><select id="retentionPreset" onchange="onRetentionPresetChange()"><option value="7">最近 7 天</option><option value="30">最近 1 个月（默认）</option><option value="90">最近 3 个月</option><option value="custom">自定义</option></select><div id="customRetentionBox" style="display:none"><input id="customRetentionDays" type="number" min="1" max="3650" value="30"><span>天</span></div><button class="btn btn-primary" data-permission="settings.edit" onclick="saveRetentionSettings()"><i class="fas fa-floppy-disk"></i> 保存设置</button></div>
+    <div id="retentionSummary" class="retention-summary">当前保留 30 天，过期日志由每分钟定时任务自动删除。</div>
+  </div>
+</div>
+</div>
+<div id="uaSettingsPanel" class="settings-panel">
+<div class="settings-card ua-settings-card">
+  <div class="settings-icon"><i class="fas fa-globe"></i></div>
+  <div class="settings-main"><div class="settings-title-row"><div><h3>User-Agent 字典</h3><p>维护监控请求可选的设备标识，删除字典项不会改动已保存的监控。</p></div><button class="btn btn-primary btn-sm" data-permission="settings.edit" onclick="startAddUa()"><i class="fas fa-plus"></i> 新增自定义</button></div>
+    <div id="uaEditor" class="ua-editor" style="display:none"><input id="uaName" placeholder="名称，例如 Windows Chrome"><textarea id="uaValue" rows="3" placeholder="Mozilla/5.0 ..."></textarea><div><button class="btn btn-secondary btn-sm" onclick="cancelUaEdit()">取消</button><button class="btn btn-primary btn-sm" onclick="saveUaProfile()">保存</button></div></div>
+    <div id="uaDictionary" class="ua-dictionary"></div>
+    <div class="ua-pagination"><span id="uaPageInfo">第 1/1 页</span><label>每页 <select id="uaPageSize" onchange="changeUaPageSize()"><option value="5">5</option><option value="10" selected>10</option><option value="20">20</option></select> 条</label><div><button class="btn btn-secondary btn-sm" id="uaFirstBtn" onclick="uaFirstPage()"><i class="fas fa-angles-left"></i></button><button class="btn btn-secondary btn-sm" id="uaPrevBtn" onclick="uaPrevPage()"><i class="fas fa-chevron-left"></i></button><button class="btn btn-secondary btn-sm" id="uaNextBtn" onclick="uaNextPage()"><i class="fas fa-chevron-right"></i></button><button class="btn btn-secondary btn-sm" id="uaLastBtn" onclick="uaLastPage()"><i class="fas fa-angles-right"></i></button></div></div>
+  </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- 新增站点弹窗 -->
+<div id="addModal" class="modal">
+<div class="modal-content monitor-modal-content">
+<div class="modal-header"><h3><i class="fas fa-plus-circle"></i> 新增监控</h3><button class="modal-close" onclick="closeAddModal()">&times;</button></div>
+<div class="modal-body">
+<div class="form-row"><div class="input-group"><label>URL</label><input id="addUrl" oninput="renderRequestPacketPreview('add')" placeholder="https://example.com"></div><div class="input-group"><label>名称</label><input id="addSiteName" placeholder="例如：官网"></div></div>
+<div class="form-row monitor-type-row"><div class="input-group type-group"><label>类型</label><select id="addType" onchange="onAddTypeChange()"><option value="http">HTTP</option><option value="keyword">关键词</option><option value="json">JSON API</option><option value="ssl">SSL 证书</option><option value="tcp">TCP 端口</option></select></div><div class="input-group" id="addKeywordBox" style="display:none"><label>关键词</label><input id="addKeyword" placeholder="登录成功"><select id="addKeywordMode" class="compact-select"><option value="exists">包含</option><option value="not_exists">不包含</option></select></div></div>
+<div class="form-row" id="addJsonBox" style="display:none"><div class="input-group"><label>JSON 字段路径</label><input id="addJsonPath" placeholder="data.status 或 items[0].id"></div><div class="input-group"><label>期望值</label><input id="addExpectedValue" placeholder="ok（留空只检查字段存在）"></div></div>
+<div id="addTypeHint" class="type-hint"><i class="fas fa-circle-info"></i><span>HTTP：检查 2xx/3xx 状态码与响应时间</span></div>
+<div id="addRequestBox" class="request-config"><div class="request-config-title"><i class="fas fa-paper-plane"></i> 请求配置</div><div class="form-row"><div class="input-group"><label>请求方法</label><select id="addRequestMethod" onchange="onRequestMethodChange('add')"><option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option><option>HEAD</option></select></div><div class="input-group"><label>User-Agent</label><select id="addUserAgent"></select></div></div><div class="input-group"><label>其他请求头（JSON）</label><textarea id="addRequestHeaders" rows="3" oninput="renderRequestPacketPreview('add')" placeholder='{"Authorization":"Bearer token"}'></textarea></div><div class="input-group" id="addRequestBodyBox" style="display:none"><label>请求体</label><textarea id="addRequestBody" rows="3" oninput="renderRequestPacketPreview('add')" placeholder='{"name":"health-check"}'></textarea></div><div class="raw-packet-box"><div class="raw-packet-head"><strong><i class="fas fa-paste"></i> 粘贴原始 HTTP 数据包</strong><button type="button" class="btn btn-secondary btn-sm" onclick="applyRawHttpPacket('add')">解析并应用</button></div><textarea id="addRawPacket" rows="7" placeholder="GET /path HTTP/1.1&#10;Host: example.com&#10;Cookie: session=...&#10;&#10;"></textarea><small>自动过滤 Host、Connection、Content-Length、Accept-Encoding 等传输头。</small></div><div class="packet-preview-box"><strong>最终请求数据包预览</strong><pre id="addRequestPreview">填写请求配置后显示预览</pre></div></div>
+<div class="form-row"><div class="input-group"><label>检测间隔</label><select id="addIntervalPreset" onchange="onAddIntervalPresetChange()"><option value="1">1 分钟</option><option value="30">30 分钟</option><option value="360">6 小时</option><option value="1440">1 天</option><option value="custom">自定义</option></select></div><div class="input-group" id="addCustomIntervalBox" style="display:none"><label>自定义(min)</label><input id="addCustomInterval" type="number" value="5" min="1"></div><div class="input-group"><label>超时(秒)</label><input id="addTimeout" type="number" value="10" min="1"></div></div>
+<div class="form-row"><div class="input-group" style="max-width:200px"><label>失败报警次数</label><input id="addFailThreshold" type="number" value="1" min="1"></div></div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" onclick="closeAddModal()">取消</button>
+<button class="btn btn-primary" onclick="submitAddSite()"><i class="fas fa-plus"></i> 添加</button>
+</div>
+</div>
+</div>
+
+<!-- 站点详情弹窗 -->
+<div id="detailModal" class="modal">
+<div class="modal-content" style="max-width:720px">
+<div class="modal-header"><h3><i class="fas fa-info-circle"></i> <span id="detailName"></span></h3><button class="modal-close" onclick="closeDetailModal()">&times;</button></div>
+<div class="modal-body">
+<div class="section-header" style="margin-bottom:0"><h2 style="font-size:1rem"><i class="fas fa-history"></i> 历史记录</h2></div>
+<table><thead><tr><th>时间</th><th>状态</th><th>HTTP</th><th>响应</th><th>信息</th></tr></thead><tbody id="detailHistoryBody"></tbody></table>
+<div id="detailPagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+<div><span id="detailPageInfo" style="font-size:0.85rem;color:var(--muted)"></span></div>
+<div style="display:flex;gap:8px">
+<button class="btn btn-secondary btn-sm" id="detailPrevBtn" onclick="detailPrevPage()"><i class="fas fa-chevron-left"></i> 上一页</button>
+<button class="btn btn-secondary btn-sm" id="detailNextBtn" onclick="detailNextPage()">下一页 <i class="fas fa-chevron-right"></i></button>
+</div>
+</div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-primary" onclick="closeDetailModal()"><i class="fas fa-check"></i> 关闭</button>
+</div>
+</div>
+</div>
+
+<!-- 编辑站点弹窗 -->
+<div id="editModal" class="modal">
+<div class="modal-content monitor-modal-content">
+<div class="modal-header"><h3><i class="fas fa-edit"></i> 编辑站点</h3><button class="modal-close" onclick="closeEditModal()">&times;</button></div>
+<div class="modal-body">
+<div class="form-row"><div class="input-group"><label>URL</label><input id="editUrl" oninput="renderRequestPacketPreview('edit')" placeholder="https://example.com"></div><div class="input-group"><label>名称</label><input id="editSiteName" placeholder="例如：官网"></div></div>
+<div class="form-row monitor-type-row"><div class="input-group type-group"><label>类型</label><select id="editType" onchange="onEditTypeChange()"><option value="http">HTTP</option><option value="keyword">关键词</option><option value="json">JSON API</option><option value="ssl">SSL 证书</option><option value="tcp">TCP 端口</option></select></div><div class="input-group" id="editKeywordBox" style="display:none"><label>关键词</label><input id="editKeyword" placeholder="登录成功"><select id="editKeywordMode" class="compact-select"><option value="exists">包含</option><option value="not_exists">不包含</option></select></div></div>
+<div class="form-row" id="editJsonBox" style="display:none"><div class="input-group"><label>JSON 字段路径</label><input id="editJsonPath" placeholder="data.status 或 items[0].id"></div><div class="input-group"><label>期望值</label><input id="editExpectedValue" placeholder="ok（留空只检查字段存在）"></div></div>
+<div id="editTypeHint" class="type-hint"><i class="fas fa-circle-info"></i><span>HTTP：检查 2xx/3xx 状态码与响应时间</span></div>
+<div id="editRequestBox" class="request-config"><div class="request-config-title"><i class="fas fa-paper-plane"></i> 请求配置</div><div class="form-row"><div class="input-group"><label>请求方法</label><select id="editRequestMethod" onchange="onRequestMethodChange('edit')"><option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option><option>HEAD</option></select></div><div class="input-group"><label>User-Agent</label><select id="editUserAgent"></select></div></div><div class="input-group"><label>其他请求头（JSON）</label><textarea id="editRequestHeaders" rows="3" oninput="renderRequestPacketPreview('edit')" placeholder='{"Authorization":"Bearer token"}'></textarea></div><div class="input-group" id="editRequestBodyBox" style="display:none"><label>请求体</label><textarea id="editRequestBody" rows="3" oninput="renderRequestPacketPreview('edit')" placeholder='{"name":"health-check"}'></textarea></div><div class="raw-packet-box"><div class="raw-packet-head"><strong><i class="fas fa-paste"></i> 粘贴原始 HTTP 数据包</strong><button type="button" class="btn btn-secondary btn-sm" onclick="applyRawHttpPacket('edit')">解析并应用</button></div><textarea id="editRawPacket" rows="7" placeholder="GET /path HTTP/1.1&#10;Host: example.com&#10;Cookie: session=...&#10;&#10;"></textarea><small>自动过滤 Host、Connection、Content-Length、Accept-Encoding 等传输头。</small></div><div class="packet-preview-box"><strong>最终请求数据包预览</strong><pre id="editRequestPreview">填写请求配置后显示预览</pre></div></div>
+<div class="form-row"><div class="input-group"><label>检测间隔</label><select id="editIntervalPreset" onchange="onEditIntervalPresetChange()"><option value="1">1 分钟</option><option value="30">30 分钟</option><option value="360">6 小时</option><option value="1440">1 天</option><option value="custom">自定义</option></select></div><div class="input-group" id="editCustomIntervalBox" style="display:none"><label>自定义(min)</label><input id="editCustomInterval" type="number" value="5" min="1"></div><div class="input-group"><label>超时(秒)</label><input id="editTimeout" type="number" value="10" min="1"></div></div>
+<div class="form-row"><div class="input-group" style="max-width:200px"><label>失败报警次数</label><input id="editFailThreshold" type="number" value="1" min="1"></div></div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" onclick="closeEditModal()">取消</button>
+<button class="btn btn-primary" onclick="submitEditSite()"><i class="fas fa-check"></i> 保存</button>
+</div>
+</div>
+</div>
+
+<!-- 修改密码弹窗 -->
+<div id="pwdModal" class="modal">
+<div class="modal-content" style="max-width:400px">
+<div class="modal-header"><h3><i class="fas fa-key"></i> 修改密码</h3><button class="modal-close" onclick="closePwdModal()">&times;</button></div>
+<div class="modal-body">
+<div class="input-group"><label>原密码</label><input id="modalOldPwd" type="password" placeholder="请输入原密码"></div>
+<div class="input-group"><label>新密码</label><input id="modalNewPwd" type="password" placeholder="新密码（至少6位）"></div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" onclick="closePwdModal()">取消</button>
+<button class="btn btn-primary" onclick="submitChangePwd()"><i class="fas fa-check"></i> 确认</button>
+</div>
+</div>
+</div>
+<!-- 用户弹窗 -->
+<div id="userModal" class="modal">
+<div class="modal-content user-modal-content">
+<div class="modal-header"><div><span class="eyebrow">ACCOUNT</span><h3><i class="fas fa-user-shield"></i> <span id="userModalTitle">新增用户</span></h3></div><button class="modal-close" onclick="closeUserModal()">&times;</button></div>
+<div class="modal-body">
+<div class="form-row"><div class="input-group"><label>用户名</label><input id="userUsername" placeholder="用于登录"></div><div class="input-group"><label>显示名称</label><input id="userDisplayName" placeholder="例如：运维小王"></div></div>
+<div class="form-row"><div class="input-group"><label>密码</label><input id="userPassword" type="password" placeholder="编辑时留空表示不修改"></div><div class="input-group"><label>角色</label><select id="userRole" onchange="applyRolePreset()"><option value="admin">管理员</option><option value="user">普通用户</option><option value="visitor">访问者</option></select></div></div>
+<label class="status-control"><input id="userEnabled" type="checkbox" checked><span>账号启用</span></label>
+<div class="permission-head"><div><strong>功能权限</strong><p>每个操作按钮都可独立授权</p></div><button class="text-btn" type="button" onclick="toggleAllPermissions(true)">全选</button><button class="text-btn" type="button" onclick="toggleAllPermissions(false)">清空</button></div>
+<div id="permissionGrid" class="permission-grid"></div>
+</div>
+<div class="modal-footer"><button class="btn btn-secondary" onclick="closeUserModal()">取消</button><button class="btn btn-primary" onclick="submitUser()"><i class="fas fa-check"></i> 保存用户</button></div>
+</div>
+</div>
+<!-- 数据包详情 -->
+<div id="packetModal" class="modal">
+<div class="modal-content packet-modal-content">
+<div class="modal-header"><div><span class="eyebrow">PACKET INSPECTOR</span><h3><i class="fas fa-code"></i> 请求 / 响应数据包</h3></div><button class="modal-close" onclick="closePacketModal()">&times;</button></div>
+<div id="packetMeta" class="packet-meta"></div>
+<div class="packet-grid"><section><div class="packet-title"><i class="fas fa-arrow-up"></i> 请求数据包</div><pre id="requestPacket"></pre></section><section><div class="packet-title response"><i class="fas fa-arrow-down"></i> 响应数据包</div><pre id="responsePacket"></pre></section></div>
+<div class="modal-footer"><button class="btn btn-primary" onclick="closePacketModal()">关闭</button></div>
+</div>
+</div>
+<!-- 通知 -->
+<div id="notification" class="notification"><div class="notification-content"><i class="notification-icon"></i><span class="notification-message"></span></div></div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/js/app.js?v=5.4"></script>
+</body>
+</html>
+
+
+
